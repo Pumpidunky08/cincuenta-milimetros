@@ -22,6 +22,9 @@ export type Database = {
           id: string
           nombre: string
           portada_url: string | null
+          precio_individual: number
+          precio_pack3: number
+          precio_paquete_completo: number
           publicado: boolean
           ubicacion: string | null
         }
@@ -32,6 +35,9 @@ export type Database = {
           id?: string
           nombre: string
           portada_url?: string | null
+          precio_individual?: number
+          precio_pack3?: number
+          precio_paquete_completo?: number
           publicado?: boolean
           ubicacion?: string | null
         }
@@ -42,6 +48,9 @@ export type Database = {
           id?: string
           nombre?: string
           portada_url?: string | null
+          precio_individual?: number
+          precio_pack3?: number
+          precio_paquete_completo?: number
           publicado?: boolean
           ubicacion?: string | null
         }
@@ -49,33 +58,45 @@ export type Database = {
       }
       fotografias: {
         Row: {
+          atleta: string | null
           atleta_tag: string | null
+          categoria: string | null
           created_at: string
+          dorsal: string | null
+          equipo: string | null
           evento_id: string
           foto_privada_path: string
           foto_publica_url: string
           id: string
-          precio: number
+          tipo_foto: Database["public"]["Enums"]["tipo_foto"]
           video_privada_path: string | null
         }
         Insert: {
+          atleta?: string | null
           atleta_tag?: string | null
+          categoria?: string | null
           created_at?: string
+          dorsal?: string | null
+          equipo?: string | null
           evento_id: string
           foto_privada_path: string
           foto_publica_url: string
           id?: string
-          precio?: number
+          tipo_foto?: Database["public"]["Enums"]["tipo_foto"]
           video_privada_path?: string | null
         }
         Update: {
+          atleta?: string | null
           atleta_tag?: string | null
+          categoria?: string | null
           created_at?: string
+          dorsal?: string | null
+          equipo?: string | null
           evento_id?: string
           foto_privada_path?: string
           foto_publica_url?: string
           id?: string
-          precio?: number
+          tipo_foto?: Database["public"]["Enums"]["tipo_foto"]
           video_privada_path?: string | null
         }
         Relationships: [
@@ -137,28 +158,37 @@ export type Database = {
     Views: {
       fotografias_publicas: {
         Row: {
-          atleta_tag: string | null
+          atleta: string | null
+          categoria: string | null
           created_at: string | null
+          dorsal: string | null
+          equipo: string | null
           evento_id: string | null
           foto_publica_url: string | null
           id: string | null
-          precio: number | null
+          tipo_foto: Database["public"]["Enums"]["tipo_foto"] | null
         }
         Insert: {
-          atleta_tag?: string | null
+          atleta?: string | null
+          categoria?: string | null
           created_at?: string | null
+          dorsal?: string | null
+          equipo?: string | null
           evento_id?: string | null
           foto_publica_url?: string | null
           id?: string | null
-          precio?: number | null
+          tipo_foto?: Database["public"]["Enums"]["tipo_foto"] | null
         }
         Update: {
-          atleta_tag?: string | null
+          atleta?: string | null
+          categoria?: string | null
           created_at?: string | null
+          dorsal?: string | null
+          equipo?: string | null
           evento_id?: string | null
           foto_publica_url?: string | null
           id?: string | null
-          precio?: number | null
+          tipo_foto?: Database["public"]["Enums"]["tipo_foto"] | null
         }
         Relationships: [
           {
@@ -172,10 +202,29 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_categorias_por_equipo: {
+        Args: { p_equipo: string; p_evento_id: string }
+        Returns: {
+          categoria: string
+        }[]
+      }
+      get_conteo_por_tipo: {
+        Args: { p_categoria: string; p_equipo: string; p_evento_id: string }
+        Returns: {
+          tipo_foto: Database["public"]["Enums"]["tipo_foto"]
+          total: number
+        }[]
+      }
+      get_equipos_por_evento: {
+        Args: { p_evento_id: string }
+        Returns: {
+          equipo: string
+        }[]
+      }
     }
     Enums: {
       estado_pago: "pendiente" | "aprobado" | "rechazado" | "reembolsado"
+      tipo_foto: "oficial" | "individual" | "rutina"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -304,6 +353,7 @@ export const Constants = {
   public: {
     Enums: {
       estado_pago: ["pendiente", "aprobado", "rechazado", "reembolsado"],
+      tipo_foto: ["oficial", "individual", "rutina"],
     },
   },
 } as const
