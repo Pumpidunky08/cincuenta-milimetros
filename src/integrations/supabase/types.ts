@@ -14,16 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      eventos: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          fecha: string | null
+          id: string
+          nombre: string
+          portada_url: string | null
+          publicado: boolean
+          ubicacion: string | null
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string | null
+          id?: string
+          nombre: string
+          portada_url?: string | null
+          publicado?: boolean
+          ubicacion?: string | null
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          fecha?: string | null
+          id?: string
+          nombre?: string
+          portada_url?: string | null
+          publicado?: boolean
+          ubicacion?: string | null
+        }
+        Relationships: []
+      }
+      fotografias: {
+        Row: {
+          atleta_tag: string | null
+          created_at: string
+          evento_id: string
+          foto_privada_path: string
+          foto_publica_url: string
+          id: string
+          precio: number
+          video_privada_path: string | null
+        }
+        Insert: {
+          atleta_tag?: string | null
+          created_at?: string
+          evento_id: string
+          foto_privada_path: string
+          foto_publica_url: string
+          id?: string
+          precio?: number
+          video_privada_path?: string | null
+        }
+        Update: {
+          atleta_tag?: string | null
+          created_at?: string
+          evento_id?: string
+          foto_privada_path?: string
+          foto_publica_url?: string
+          id?: string
+          precio?: number
+          video_privada_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fotografias_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordenes: {
+        Row: {
+          archivos_enviados: boolean
+          created_at: string
+          email_comprador: string
+          estado: Database["public"]["Enums"]["estado_pago"]
+          fecha_envio: string | null
+          id: string
+          items: Json
+          monto_total: number
+          nombre_comprador: string | null
+          proveedor_pago: string | null
+          referencia_pago: string | null
+          updated_at: string
+        }
+        Insert: {
+          archivos_enviados?: boolean
+          created_at?: string
+          email_comprador: string
+          estado?: Database["public"]["Enums"]["estado_pago"]
+          fecha_envio?: string | null
+          id?: string
+          items?: Json
+          monto_total?: number
+          nombre_comprador?: string | null
+          proveedor_pago?: string | null
+          referencia_pago?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archivos_enviados?: boolean
+          created_at?: string
+          email_comprador?: string
+          estado?: Database["public"]["Enums"]["estado_pago"]
+          fecha_envio?: string | null
+          id?: string
+          items?: Json
+          monto_total?: number
+          nombre_comprador?: string | null
+          proveedor_pago?: string | null
+          referencia_pago?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      fotografias_publicas: {
+        Row: {
+          atleta_tag: string | null
+          created_at: string | null
+          evento_id: string | null
+          foto_publica_url: string | null
+          id: string | null
+          precio: number | null
+        }
+        Insert: {
+          atleta_tag?: string | null
+          created_at?: string | null
+          evento_id?: string | null
+          foto_publica_url?: string | null
+          id?: string | null
+          precio?: number | null
+        }
+        Update: {
+          atleta_tag?: string | null
+          created_at?: string | null
+          evento_id?: string | null
+          foto_publica_url?: string | null
+          id?: string | null
+          precio?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fotografias_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      estado_pago: "pendiente" | "aprobado" | "rechazado" | "reembolsado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +302,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      estado_pago: ["pendiente", "aprobado", "rechazado", "reembolsado"],
+    },
   },
 } as const
