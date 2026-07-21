@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       eventos: {
         Row: {
           created_at: string
@@ -221,6 +239,7 @@ export type Database = {
           equipo: string
         }[]
       }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       estado_pago: "pendiente" | "aprobado" | "rechazado" | "reembolsado"
