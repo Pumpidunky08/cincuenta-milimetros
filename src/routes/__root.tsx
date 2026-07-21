@@ -80,6 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#0f0a1a" },
+      { title: "50milimet — Fotografías oficiales de porrismo y cheerleading" },
+      { property: "og:title", content: "50milimet — Fotografías oficiales de porrismo y cheerleading" },
+      { name: "twitter:title", content: "50milimet — Fotografías oficiales de porrismo y cheerleading" },
+      { name: "description", content: "Encuentra y compra las fotografías oficiales de tu equipo directamente desde las gradas del torneo. Alta resolución, entrega inmediata." },
+      { property: "og:description", content: "Encuentra y compra las fotografías oficiales de tu equipo directamente desde las gradas del torneo. Alta resolución, entrega inmediata." },
+      { name: "twitter:description", content: "Encuentra y compra las fotografías oficiales de tu equipo directamente desde las gradas del torneo. Alta resolución, entrega inmediata." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4ce33c04-8e16-465a-88aa-d235d145515b/id-preview-2c92f494--278559de-84b1-494f-9cc4-9e49c07f86ea.lovable.app-1784660934730.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4ce33c04-8e16-465a-88aa-d235d145515b/id-preview-2c92f494--278559de-84b1-494f-9cc4-9e49c07f86ea.lovable.app-1784660934730.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {

@@ -10,14 +10,14 @@ import heroImg from "@/assets/hero-cheer.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CheerShot — Fotografías oficiales de porrismo y cheerleading" },
+      { title: "50milimet — Fotografías oficiales de porrismo y cheerleading" },
       {
         name: "description",
         content:
           "Encuentra y compra las fotografías oficiales de tu equipo directamente desde las gradas del torneo. Alta resolución, entrega inmediata.",
       },
-      { property: "og:title", content: "CheerShot — Fotografías oficiales de porrismo" },
-      { property: "og:description", content: "Compra fotos y videos oficiales de eventos de porrismo en vivo." },
+      { property: "og:title", content: "50milimet — Fotografías oficiales de porrismo y cheerleading" },
+      { property: "og:description", content: "Encuentra y compra las fotografías oficiales de tu equipo directamente desde las gradas del torneo. Alta resolución, entrega inmediata." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
