@@ -13,6 +13,7 @@ import { Route as SuccessRouteImport } from './routes/success'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EventEventIdRouteImport } from './routes/event.$eventId'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
@@ -34,17 +35,24 @@ const EventEventIdRoute = EventEventIdRouteImport.update({
   path: '/event/$eventId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
   '/success': typeof SuccessRoute
+  '/admin/login': typeof AdminLoginRoute
   '/event/$eventId': typeof EventEventIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
   '/success': typeof SuccessRoute
+  '/admin/login': typeof AdminLoginRoute
   '/event/$eventId': typeof EventEventIdRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/checkout': typeof CheckoutRoute
   '/success': typeof SuccessRoute
+  '/admin/login': typeof AdminLoginRoute
   '/event/$eventId': typeof EventEventIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/checkout' | '/success' | '/event/$eventId'
+  fullPaths: '/' | '/checkout' | '/success' | '/admin/login' | '/event/$eventId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/checkout' | '/success' | '/event/$eventId'
-  id: '__root__' | '/' | '/checkout' | '/success' | '/event/$eventId'
+  to: '/' | '/checkout' | '/success' | '/admin/login' | '/event/$eventId'
+  id:
+    | '__root__'
+    | '/'
+    | '/checkout'
+    | '/success'
+    | '/admin/login'
+    | '/event/$eventId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckoutRoute: typeof CheckoutRoute
   SuccessRoute: typeof SuccessRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   EventEventIdRoute: typeof EventEventIdRoute
 }
 
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventEventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,18 +129,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckoutRoute: CheckoutRoute,
   SuccessRoute: SuccessRoute,
+  AdminLoginRoute: AdminLoginRoute,
   EventEventIdRoute: EventEventIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
