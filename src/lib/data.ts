@@ -71,9 +71,9 @@ export const photos: Photo[] = Array.from({ length: 36 }, (_, i) => ({
 }));
 
 export const PRICES = {
-  single: 12000,
-  pack3: 30000,
-  full: 75000,
+  single: 15000,
+  pack3: 40000,
+  full: 130000,
 } as const;
 
 export const formatCOP = (n: number) =>
