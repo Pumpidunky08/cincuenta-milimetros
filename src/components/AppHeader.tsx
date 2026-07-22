@@ -1,17 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingBag, Sparkles } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-store";
+import logoAzul from "@/assets/logo-50mm-azul.png.asset.json";
 
 export function AppHeader({ onCart }: { onCart: () => void }) {
   const { count } = useCart();
   return (
     <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-lg">
-      <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-hero text-white">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <span className="font-display text-lg tracking-tight">CHEER<span className="text-brand">SHOT</span></span>
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4">
+        <Link to="/" className="flex items-center" aria-label="50Milimetros — Inicio">
+          <img
+            src={logoAzul.url}
+            alt="50Milimetros"
+            className="h-9 w-auto sm:h-10"
+            draggable={false}
+          />
         </Link>
         <div className="ml-auto">
           <button
