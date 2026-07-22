@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,9 @@ function AdminLoginPage() {
             {loading ? "Ingresando..." : "Ingresar"}
           </Button>
         </form>
+        <Button asChild variant="ghost" className="mt-4 w-full">
+          <Link to="/">Volver al inicio</Link>
+        </Button>
       </div>
     </main>
   );
