@@ -126,6 +126,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         <Outlet />
+        <footer className="mt-16 border-t py-6 text-center text-xs text-muted-foreground">
+          <Link to="/admin/login" className="transition hover:text-foreground">
+            Acceso administradores
+          </Link>
+        </footer>
         <Toaster position="top-center" />
       </CartProvider>
     </QueryClientProvider>
