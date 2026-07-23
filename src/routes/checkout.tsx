@@ -32,12 +32,13 @@ const schema = z.object({
 function Checkout() {
   const { items, total, clear } = useCart();
   const navigate = useNavigate();
+  const sendEmail = useServerFn(sendOrderConfirmation);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = schema.safeParse({ name, email });
     if (!res.success) {
@@ -48,11 +49,32 @@ function Checkout() {
     }
     setErrors({});
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await sendEmail({
+        data: {
+          name,
+          email,
+          total,
+          items: items.map((item) => ({
+            label:
+              item.kind === "photo"
+                ? `Foto #${item.photo.bib} · ${item.photo.team}`
+                : item.kind === "pack3"
+                  ? "Pack de 3 fotos"
+                  : "Paquete Completo (todas las fotos + video)",
+            price:
+              item.kind === "photo" ? PRICES.single : item.kind === "pack3" ? PRICES.pack3 : PRICES.full,
+          })),
+        },
+      });
       const successEmail = email;
       clear();
       navigate({ to: "/success", search: { email: successEmail } });
-    }, 1400);
+    } catch (err) {
+      console.error(err);
+      toast.error("No pudimos enviar la confirmación. Intenta de nuevo.");
+      setLoading(false);
+    }
   };
 
   if (items.length === 0) {
