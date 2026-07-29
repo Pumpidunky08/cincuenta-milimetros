@@ -54,7 +54,7 @@ function EventPage() {
   const [team, setTeam] = useState<string>("Todos");
   const [query, setQuery] = useState("");
   const [modalPhoto, setModalPhoto] = useState<Photo | null>(null);
-  const { addPack3, addFull, items } = useCart();
+  const { addPack3, addFull, removePhoto, items } = useCart();
 
   const teams = useMemo(() => ["Todos", ...Array.from(new Set(photos.map((p) => p.team)))], []);
 
@@ -82,7 +82,11 @@ function EventPage() {
       });
       return;
     }
-    addPack3(selectedPhotos.slice(0, 3));
+    const paraElPack = selectedPhotos.slice(0, 3);
+    addPack3(paraElPack);
+    // Evita el doble cobro: estas 3 fotos ya no deben seguir contando
+    // como ítems individuales sueltos en el carrito.
+    paraElPack.forEach((p) => removePhoto(p.id));
     toast.success("¡Pack de 3 fotos añadido!");
   };
 
