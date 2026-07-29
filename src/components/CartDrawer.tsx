@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingBag, Sparkles, Images, Camera } from "lucide-react";
 import { useCart } from "@/lib/cart-store";
-import { formatCOP } from "@/lib/data";
+import { formatCOP, PRICES } from "@/lib/data";
 import { useNavigate } from "@tanstack/react-router";
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void };
@@ -43,7 +43,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                           <Camera className="mr-1 inline h-3 w-3" /> Foto individual
                         </p>
                         <p className="truncate text-sm font-semibold">#{item.photo.bib} · {item.photo.team}</p>
-                        <p className="text-xs text-muted-foreground">{formatCOP(12000)}</p>
+                        <p className="text-xs text-muted-foreground">{formatCOP(PRICES.single)}</p>
                       </div>
                     </>
                   )}
@@ -59,7 +59,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                           <Images className="mr-1 inline h-3 w-3" /> Pack de 3 fotos
                         </p>
                         <p className="text-sm font-semibold">{item.photos.length} fotos seleccionadas</p>
-                        <p className="text-xs text-muted-foreground">{formatCOP(30000)}</p>
+                        <p className="text-xs text-muted-foreground">{formatCOP(PRICES.pack3)}</p>
                       </div>
                     </>
                   )}
@@ -73,7 +73,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                           <Sparkles className="mr-1 inline h-3 w-3" /> Paquete Completo
                         </p>
                         <p className="text-sm font-semibold">Todas las fotos + video</p>
-                        <p className="text-xs text-muted-foreground">{formatCOP(75000)}</p>
+                        <p className="text-xs text-muted-foreground">{formatCOP(PRICES.full)}</p>
                       </div>
                     </>
                   )}
