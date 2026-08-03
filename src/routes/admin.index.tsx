@@ -104,7 +104,18 @@ function AdminPage() {
         </Button>
       </header>
       <section className="mx-auto max-w-4xl px-6 py-12">
-        <EventoForm />
+        <Tabs defaultValue="fotos">
+          <TabsList>
+            <TabsTrigger value="fotos">Subir fotos</TabsTrigger>
+            <TabsTrigger value="eventos">Crear evento</TabsTrigger>
+          </TabsList>
+          <TabsContent value="fotos" className="mt-8">
+            <FotoUploader />
+          </TabsContent>
+          <TabsContent value="eventos" className="mt-8">
+            <EventoForm />
+          </TabsContent>
+        </Tabs>
       </section>
     </main>
   );
