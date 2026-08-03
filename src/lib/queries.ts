@@ -2,8 +2,41 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 
 export type Evento = Tables<"eventos">;
-export type FotoPublica = Tables<"fotografias_publicas">;
 export type TipoFoto = Enums<"tipo_foto">;
+
+type FotoPublicaRow = Tables<"fotografias_publicas">;
+
+/**
+ * La vista `fotografias_publicas` expone todas sus columnas como nullable.
+ * En la app solo usamos filas completas, así que normalizamos los campos
+ * indispensables a no-nulos y filtramos las filas incompletas.
+ */
+export type FotoPublica = {
+  id: string;
+  evento_id: string;
+  foto_publica_url: string;
+  tipo_foto: TipoFoto;
+  equipo: string | null;
+  categoria: string | null;
+  atleta: string | null;
+  dorsal: string | null;
+  created_at: string | null;
+};
+
+function normalizarFoto(row: FotoPublicaRow): FotoPublica | null {
+  if (!row.id || !row.evento_id || !row.foto_publica_url) return null;
+  return {
+    id: row.id,
+    evento_id: row.evento_id,
+    foto_publica_url: row.foto_publica_url,
+    tipo_foto: (row.tipo_foto ?? "individual") as TipoFoto,
+    equipo: row.equipo ?? null,
+    categoria: row.categoria ?? null,
+    atleta: row.atleta ?? null,
+    dorsal: row.dorsal ?? null,
+    created_at: row.created_at ?? null,
+  };
+}
 
 // ---------------------------------------------------------
 // Nivel 1: Eventos (incluye precios propios del evento)
