@@ -1,18 +1,23 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from "react";
 import { createElement } from "react";
-import { PRICES, type Photo } from "./data";
+import { PRICES } from "./data";
+import type { FotoPublica } from "./queries";
 
 export type CartItem =
-  | { kind: "photo"; photo: Photo }
-  | { kind: "pack3"; photos: Photo[]; id: string }
+  | { kind: "photo"; photo: FotoPublica }
+  | { kind: "pack3"; photos: FotoPublica[]; id: string }
   | { kind: "full"; eventId: string; id: string };
+
+export type Pricing = { single: number; pack3: number; full: number };
 
 type CartCtx = {
   items: CartItem[];
-  addPhoto: (p: Photo) => void;
+  pricing: Pricing;
+  setPricing: (p: Pricing) => void;
+  addPhoto: (p: FotoPublica) => void;
   removePhoto: (id: string) => void;
   hasPhoto: (id: string) => boolean;
-  addPack3: (photos: Photo[]) => void;
+  addPack3: (photos: FotoPublica[]) => void;
   addFull: (eventId: string) => void;
   remove: (index: number) => void;
   clear: () => void;
@@ -24,6 +29,8 @@ const Ctx = createContext<CartCtx | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [pricing, setPricingState] = useState<Pricing>(PRICES);
+  const setPricing = useCallback((p: Pricing) => setPricingState(p), []);
 
   const addPhoto = useCallback((p: Photo) => {
     setItems((cur) => (cur.some((i) => i.kind === "photo" && i.photo.id === p.id) ? cur : [...cur, { kind: "photo", photo: p }]));
@@ -35,7 +42,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (id: string) => items.some((i) => i.kind === "photo" && i.photo.id === id),
     [items],
   );
-  const addPack3 = useCallback((photos: Photo[]) => {
+  const addPack3 = useCallback((photos: FotoPublica[]) => {
     setItems((cur) => [...cur, { kind: "pack3", photos, id: `pack-${Date.now()}` }]);
   }, []);
   const addFull = useCallback((eventId: string) => {
@@ -49,14 +56,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const total = useMemo(
     () =>
       items.reduce((sum, i) => {
-        if (i.kind === "photo") return sum + PRICES.single;
-        if (i.kind === "pack3") return sum + PRICES.pack3;
-        return sum + PRICES.full;
+        if (i.kind === "photo") return sum + pricing.single;
+        if (i.kind === "pack3") return sum + pricing.pack3;
+        return sum + pricing.full;
       }, 0),
-    [items],
+    [items, pricing],
   );
 
-  const value: CartCtx = { items, addPhoto, removePhoto, hasPhoto, addPack3, addFull, remove, clear, total, count: items.length };
+  const value: CartCtx = {
+    items,
+    pricing,
+    setPricing,
+    addPhoto,
+    removePhoto,
+    hasPhoto,
+    addPack3,
+    addFull,
+    remove,
+    clear,
+    total,
+    count: items.length,
+  };
   return createElement(Ctx.Provider, { value }, children);
 }
 

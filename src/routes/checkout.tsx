@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowLeft, Lock, CreditCard, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart-store";
-import { formatCOP, PRICES } from "@/lib/data";
+import { formatCOP } from "@/lib/data";
 import { sendOrderConfirmation } from "@/lib/email.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ const schema = z.object({
 });
 
 function Checkout() {
-  const { items, total, clear } = useCart();
+  const { items, total, clear, pricing } = useCart();
   const navigate = useNavigate();
   const sendEmail = useServerFn(sendOrderConfirmation);
   const [name, setName] = useState("");
@@ -58,12 +58,12 @@ function Checkout() {
           items: items.map((item) => ({
             label:
               item.kind === "photo"
-                ? `Foto #${item.photo.bib} · ${item.photo.team}`
+                ? `Foto #${item.photo.dorsal ?? ""} · ${item.photo.equipo ?? ""}`
                 : item.kind === "pack3"
                   ? "Pack de 3 fotos"
                   : "Paquete Completo (todas las fotos + video)",
             price:
-              item.kind === "photo" ? PRICES.single : item.kind === "pack3" ? PRICES.pack3 : PRICES.full,
+              item.kind === "photo" ? pricing.single : item.kind === "pack3" ? pricing.pack3 : pricing.full,
           })),
         },
       });
@@ -113,12 +113,17 @@ function Checkout() {
             {items.map((item, idx) => (
               <li key={idx} className="flex items-center justify-between py-3 text-sm">
                 <span className="pr-3">
-                  {item.kind === "photo" && <>Foto #{item.photo.bib} · {item.photo.team}</>}
+                  {item.kind === "photo" && (
+                    <>
+                      Foto {item.photo.dorsal ? `#${item.photo.dorsal} · ` : ""}
+                      {item.photo.equipo}
+                    </>
+                  )}
                   {item.kind === "pack3" && <>Pack de 3 fotos</>}
                   {item.kind === "full" && <>Paquete Completo (todas las fotos + video)</>}
                 </span>
                 <span className="font-semibold">
-                  {formatCOP(item.kind === "photo" ? PRICES.single : item.kind === "pack3" ? PRICES.pack3 : PRICES.full)}
+                  {formatCOP(item.kind === "photo" ? pricing.single : item.kind === "pack3" ? pricing.pack3 : pricing.full)}
                 </span>
               </li>
             ))}

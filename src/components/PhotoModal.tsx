@@ -1,11 +1,11 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Check, Plus, X } from "lucide-react";
-import type { Photo } from "@/lib/data";
+import type { FotoPublica } from "@/lib/queries";
 import { useCart } from "@/lib/cart-store";
 
 type Props = {
-  photo: Photo | null;
+  photo: FotoPublica | null;
   onClose: () => void;
 };
 
@@ -29,8 +29,8 @@ export function PhotoModal({ photo, onClose }: Props) {
           </button>
           <div className="relative aspect-[4/5] w-full">
             <img
-              src={photo.src}
-              alt={photo.team}
+              src={photo.foto_publica_url}
+              alt={photo.equipo ?? ""}
               draggable={false}
               className="no-select absolute inset-0 h-full w-full object-cover pointer-events-none"
             />
@@ -47,10 +47,11 @@ export function PhotoModal({ photo, onClose }: Props) {
             </div>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">
-                #{photo.bib} · {photo.category}
+                {photo.dorsal ? `#${photo.dorsal} · ` : ""}
+                {photo.categoria}
               </p>
-              <p className="mt-0.5 text-lg font-black text-white">{photo.team}</p>
-              <p className="text-xs text-white/70">{photo.athlete}</p>
+              <p className="mt-0.5 text-lg font-black text-white">{photo.equipo}</p>
+              {photo.atleta && <p className="text-xs text-white/70">{photo.atleta}</p>}
             </div>
           </div>
           <div className="bg-card p-3">

@@ -2,13 +2,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingBag, Sparkles, Images, Camera } from "lucide-react";
 import { useCart } from "@/lib/cart-store";
-import { formatCOP, PRICES } from "@/lib/data";
+import { formatCOP } from "@/lib/data";
 import { useNavigate } from "@tanstack/react-router";
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void };
 
 export function CartDrawer({ open, onOpenChange }: Props) {
-  const { items, remove, total, count } = useCart();
+  const { items, remove, total, count, pricing } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -37,13 +37,16 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                 <li key={idx} className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-card">
                   {item.kind === "photo" && (
                     <>
-                      <img src={item.photo.src} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                      <img src={item.photo.foto_publica_url} alt="" className="h-16 w-16 rounded-xl object-cover" />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold uppercase tracking-wider text-brand">
                           <Camera className="mr-1 inline h-3 w-3" /> Foto individual
                         </p>
-                        <p className="truncate text-sm font-semibold">#{item.photo.bib} · {item.photo.team}</p>
-                        <p className="text-xs text-muted-foreground">{formatCOP(PRICES.single)}</p>
+                        <p className="truncate text-sm font-semibold">
+                          {item.photo.dorsal ? `#${item.photo.dorsal} · ` : ""}
+                          {item.photo.equipo}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{formatCOP(pricing.single)}</p>
                       </div>
                     </>
                   )}
@@ -51,7 +54,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                     <>
                       <div className="grid h-16 w-16 shrink-0 grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
                         {item.photos.slice(0, 4).map((p) => (
-                          <img key={p.id} src={p.src} alt="" className="h-full w-full object-cover" />
+                          <img key={p.id} src={p.foto_publica_url} alt="" className="h-full w-full object-cover" />
                         ))}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -59,7 +62,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                           <Images className="mr-1 inline h-3 w-3" /> Pack de 3 fotos
                         </p>
                         <p className="text-sm font-semibold">{item.photos.length} fotos seleccionadas</p>
-                        <p className="text-xs text-muted-foreground">{formatCOP(PRICES.pack3)}</p>
+                        <p className="text-xs text-muted-foreground">{formatCOP(pricing.pack3)}</p>
                       </div>
                     </>
                   )}
@@ -73,7 +76,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
                           <Sparkles className="mr-1 inline h-3 w-3" /> Paquete Completo
                         </p>
                         <p className="text-sm font-semibold">Todas las fotos + video</p>
-                        <p className="text-xs text-muted-foreground">{formatCOP(PRICES.full)}</p>
+                        <p className="text-xs text-muted-foreground">{formatCOP(pricing.full)}</p>
                       </div>
                     </>
                   )}

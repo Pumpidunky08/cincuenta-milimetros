@@ -1,16 +1,17 @@
 import { Check, Plus } from "lucide-react";
-import type { Photo } from "@/lib/data";
+import type { FotoPublica } from "@/lib/queries";
 import { useCart } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  photo: Photo;
-  onOpen: (p: Photo) => void;
+  photo: FotoPublica;
+  onOpen: (p: FotoPublica) => void;
 };
 
 export function PhotoCard({ photo, onOpen }: Props) {
   const { addPhoto, removePhoto, hasPhoto } = useCart();
   const selected = hasPhoto(photo.id);
+  const etiqueta = photo.dorsal ? `#${photo.dorsal}` : photo.tipo_foto === "rutina" ? "Rutina" : "Oficial";
 
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-muted shadow-card">
@@ -21,8 +22,8 @@ export function PhotoCard({ photo, onOpen }: Props) {
         onContextMenu={(e) => e.preventDefault()}
       >
         <img
-          src={photo.src}
-          alt={`${photo.team} - ${photo.athlete}`}
+          src={photo.foto_publica_url}
+          alt={`${photo.equipo ?? ""} - ${photo.atleta ?? ""}`}
           draggable={false}
           className="no-select absolute inset-0 h-full w-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-105"
         />
@@ -35,8 +36,8 @@ export function PhotoCard({ photo, onOpen }: Props) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-2.5">
           <div className="min-w-0">
-            <p className="truncate text-[10px] font-bold uppercase tracking-wider text-white/80">#{photo.bib}</p>
-            <p className="truncate text-xs font-semibold text-white">{photo.team}</p>
+            <p className="truncate text-[10px] font-bold uppercase tracking-wider text-white/80">{etiqueta}</p>
+            <p className="truncate text-xs font-semibold text-white">{photo.equipo}</p>
           </div>
         </div>
       </button>
