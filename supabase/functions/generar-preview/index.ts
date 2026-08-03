@@ -105,7 +105,7 @@ serve(async (req) => {
 
     // 3. Marca de agua diagonal repetida
     const fuente = await getFont();
-    const texto = Image.renderText(fuente, 26, "Preview · No Oficial", 0xffffff90);
+    const texto = await Image.renderText(fuente, 26, "Preview · No Oficial", 0xffffff90);
 
     const paso = 240;
     const capaMarca = new Image(image.width, image.height);
