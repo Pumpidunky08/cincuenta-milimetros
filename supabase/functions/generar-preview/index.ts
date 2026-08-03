@@ -40,7 +40,7 @@ let fontCache: Uint8Array | null = null;
 async function getFont(): Promise<Uint8Array> {
   if (!fontCache) {
     const res = await fetch(
-      "https://raw.githubusercontent.com/matmen/ImageScript/master/tests/fonts/Roboto-Regular.ttf",
+      "https://raw.githubusercontent.com/matmen/ImageScript/master/tests/fonts/opensans%20bold.ttf",
     );
     if (!res.ok) throw new Error("No se pudo cargar la fuente de la marca de agua");
     fontCache = new Uint8Array(await res.arrayBuffer());
