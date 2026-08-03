@@ -1,15 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { CartProvider, useCart } from "./cart-store";
-import { PRICES, type Photo } from "./data";
+import { PRICES } from "./data";
+import type { FotoPublica } from "./queries";
 
-const photo = (id: string): Photo => ({
+const photo = (id: string): FotoPublica => ({
   id,
-  src: "",
-  team: "Team A",
-  category: "Junior",
-  athlete: "Athlete " + id,
-  bib: id,
+  evento_id: "evento-1",
+  foto_publica_url: `https://example.com/${id}.jpg`,
+  tipo_foto: "individual",
+  equipo: "Team A",
+  categoria: "Junior",
+  atleta: "Athlete " + id,
+  dorsal: id,
+  created_at: null,
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
