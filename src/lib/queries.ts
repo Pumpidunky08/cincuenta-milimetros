@@ -140,7 +140,7 @@ export async function getFotosFiltradas(params: {
 
   const { data, error } = await query.order("created_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(normalizarFoto).filter((f): f is FotoPublica => f !== null);
 }
 
 // ---------------------------------------------------------
