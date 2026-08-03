@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { EventoForm } from "@/components/admin/EventoForm";
+import { FotoUploader } from "@/components/admin/FotoUploader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({
@@ -104,7 +106,18 @@ function AdminPage() {
         </Button>
       </header>
       <section className="mx-auto max-w-4xl px-6 py-12">
-        <EventoForm />
+        <Tabs defaultValue="fotos">
+          <TabsList>
+            <TabsTrigger value="fotos">Subir fotos</TabsTrigger>
+            <TabsTrigger value="eventos">Crear evento</TabsTrigger>
+          </TabsList>
+          <TabsContent value="fotos" className="mt-8">
+            <FotoUploader />
+          </TabsContent>
+          <TabsContent value="eventos" className="mt-8">
+            <EventoForm />
+          </TabsContent>
+        </Tabs>
       </section>
     </main>
   );

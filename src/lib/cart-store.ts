@@ -32,7 +32,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [pricing, setPricingState] = useState<Pricing>(PRICES);
   const setPricing = useCallback((p: Pricing) => setPricingState(p), []);
 
-  const addPhoto = useCallback((p: Photo) => {
+  const addPhoto = useCallback((p: FotoPublica) => {
     setItems((cur) => (cur.some((i) => i.kind === "photo" && i.photo.id === p.id) ? cur : [...cur, { kind: "photo", photo: p }]));
   }, []);
   const removePhoto = useCallback((id: string) => {
