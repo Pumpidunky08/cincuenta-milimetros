@@ -35,12 +35,15 @@ function json(body: unknown, status = 200) {
   });
 }
 
-let fontCache: Font | null = null;
-async function getFont(): Promise<Font> {
+// ImageScript 1.2.x recibe la fuente como bytes TTF
+let fontCache: Uint8Array | null = null;
+async function getFont(): Promise<Uint8Array> {
   if (!fontCache) {
-    fontCache = await Font.fromUrl(
-      "https://raw.githubusercontent.com/matmen/ImageScript/master/fonts/arial.ttf",
+    const res = await fetch(
+      "https://raw.githubusercontent.com/matmen/ImageScript/master/tests/fonts/Roboto-Regular.ttf",
     );
+    if (!res.ok) throw new Error("No se pudo cargar la fuente de la marca de agua");
+    fontCache = new Uint8Array(await res.arrayBuffer());
   }
   return fontCache;
 }
