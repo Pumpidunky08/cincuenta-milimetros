@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Calendar, MapPin, Camera, ArrowRight, Sparkles, Shield, Zap } from "lucide-react";
-import { events } from "@/lib/data";
+import { useQuery } from "@tanstack/react-query";
+import { Calendar, MapPin, ArrowRight, Sparkles, Shield, Zap } from "lucide-react";
+import { getEventos, queryKeys } from "@/lib/queries";
 import { AppHeader } from "@/components/AppHeader";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,11 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const [cartOpen, setCartOpen] = useState(false);
+  const { data: eventos, isLoading, isError } = useQuery({
+    queryKey: queryKeys.eventos(),
+    queryFn: getEventos,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader onCart={() => setCartOpen(true)} />
@@ -67,11 +73,29 @@ function Home() {
             <p className="text-xs font-bold uppercase tracking-widest text-brand">Eventos activos</p>
             <h2 className="mt-1 font-display text-2xl sm:text-3xl">Elige tu torneo</h2>
           </div>
-          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">{events.length} activos</span>
+          {eventos && (
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">{eventos.length} activos</span>
+          )}
         </div>
 
+        {isLoading && (
+          <p className="py-10 text-center text-sm text-muted-foreground">Cargando eventos...</p>
+        )}
+
+        {isError && (
+          <p className="py-10 text-center text-sm text-destructive">
+            No pudimos cargar los eventos. Intenta de nuevo en un momento.
+          </p>
+        )}
+
+        {eventos && eventos.length === 0 && (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            Todavía no hay eventos publicados. Vuelve pronto.
+          </p>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((e) => (
+          {eventos?.map((e) => (
             <Link
               key={e.id}
               to="/event/$eventId"
@@ -79,20 +103,27 @@ function Home() {
               className="group relative overflow-hidden rounded-3xl bg-card shadow-card transition hover:-translate-y-1 hover:shadow-glow"
             >
               <div className="relative aspect-[5/4] overflow-hidden">
-                <img src={e.cover} alt={e.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <img
+                  src={e.portada_url || heroImg}
+                  alt={e.nombre}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-brand-foreground">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> Activo
                 </div>
-                <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
-                  <Camera className="h-3 w-3" /> {e.photoCount.toLocaleString()}
-                </div>
               </div>
               <div className="p-4">
-                <h3 className="line-clamp-2 font-display text-lg leading-tight">{e.name}</h3>
+                <h3 className="line-clamp-2 font-display text-lg leading-tight">{e.nombre}</h3>
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {e.date}</span>
-                  <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.location}</span>
+                  {e.fecha && (
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3 w-3" /> {new Date(e.fecha + "T00:00:00").toLocaleDateString("es-CO")}
+                    </span>
+                  )}
+                  {e.ubicacion && (
+                    <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.ubicacion}</span>
+                  )}
                 </div>
                 <Button variant="default" size="sm" className="mt-4 w-full">
                   Ver fotografías <ArrowRight className="ml-1 h-4 w-4" />
