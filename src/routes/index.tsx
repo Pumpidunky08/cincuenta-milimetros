@@ -6,7 +6,7 @@ import { getEventos, queryKeys } from "@/lib/queries";
 import { AppHeader } from "@/components/AppHeader";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Button } from "@/components/ui/button";
-import heroImg from "@/assets/hero-cheer.jpg";
+import heroImg from "@/assets/hero-cheer.jpeg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
