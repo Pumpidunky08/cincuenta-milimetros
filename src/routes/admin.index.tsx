@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { EventoForm } from "@/components/admin/EventoForm";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({
@@ -103,12 +104,7 @@ function AdminPage() {
         </Button>
       </header>
       <section className="mx-auto max-w-4xl px-6 py-12">
-        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
-          <h2 className="text-xl font-semibold text-foreground">Bienvenido</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Aquí irán las herramientas para crear eventos y subir fotografías.
-          </p>
-        </div>
+        <EventoForm />
       </section>
     </main>
   );
