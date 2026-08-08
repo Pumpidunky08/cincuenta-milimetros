@@ -1,33 +1,32 @@
 ## Objetivo
 
-Que al subir una foto original se genere automáticamente una versión de vista previa (reducida y con marca de agua diagonal "Preview · No Oficial") y que esa copia sea la que ven los compradores en la galería.
+Dejar funcionando la generación automática de vistas previas: tomar la foto original del almacenamiento privado, reducirla y marcarla con agua, y devolver un enlace utilizable en la galería.
 
 ## Estado actual verificado
 
-- Existe el código de la función `generar-preview` en el proyecto, pero apunta a un bucket llamado `fotos-originales` que **no existe**. Los buckets reales son `fotos-privadas` y `fotos-publicas` (ambos privados).
-- La tabla `fotografias` ya tiene `foto_publica_url`, `foto_privada_path` y `video_privada_path`.
-- No hay todavía ninguna pantalla en el panel de administración para subir fotos: el panel solo valida el acceso de administrador.
+- El archivo de la función apunta al bucket `fotos-originales`, que no existe. Los buckets reales son `fotos-privadas` y `fotos-publicas`.
+- Los registros de ejecución confirman el fallo exacto: `Error descargando original: StorageApiError: Bucket not found`.
+- La función carga la fuente de la marca de agua desde una dirección que ya no existe (responde 404), así que el texto tampoco se dibujaría aunque el bucket fuera correcto.
+- La función no valida quién la llama: hoy cualquiera con la dirección puede pedir procesar un archivo privado.
+- Quedó código de diagnóstico temporal que escribe listados de buckets en los registros.
+- El componente de subida en el panel (`FotoUploader`) ya invoca `generar-preview` y espera recibir `foto_publica_url`.
 
-## Qué se va a construir
+## Qué se va a corregir
 
-**1. Corregir la función de previews**
-- Usar los buckets reales (`fotos-privadas` como origen, `fotos-publicas` como destino).
-- Mantener: reducción a máximo 1200 px de ancho, marca de agua repetida en diagonal, compresión JPEG.
-- Devolver un enlace firmado de 10 años a la copia pública (los buckets no pueden ser públicos en este espacio de trabajo).
-- Proteger la función: solo un usuario administrador (validado con `is_admin()`) puede invocarla.
-- Desplegarla y probarla con una imagen real.
+1. **Buckets correctos**: leer de `fotos-privadas` y escribir en `fotos-publicas`, sin depender de valores de configuración desactualizados.
+2. **Marca de agua**: usar una fuente que sí exista y esperar correctamente el dibujado del texto "Preview · No Oficial" repetido en diagonal.
+3. **Tamaño**: reducir a un máximo de 1200 px de ancho y guardar como JPEG comprimido.
+4. **Seguridad**: aceptar solo llamadas de un administrador autenticado (validado con `is_admin()`), y rechazar rutas inválidas.
+5. **Respuesta**: devolver siempre JSON con `foto_publica_url` (enlace firmado de 10 años) o un mensaje de error claro, con cabeceras CORS.
+6. **Limpieza**: quitar el código de diagnóstico temporal.
 
-**2. Pantalla de subida en `/admin`**
-- Selector de evento + campos: equipo, categoría, tipo de foto, atleta, dorsal.
-- Subida múltiple de archivos al bucket privado.
-- Por cada archivo: llamar a `generar-preview` y guardar la fila en `fotografias` con `foto_privada_path` y `foto_publica_url`.
-- Barra de progreso por archivo y aviso de errores.
+## Verificación
 
-**3. Permisos de almacenamiento**
-- Políticas en `storage.objects`: solo administradores pueden subir/leer `fotos-privadas` y subir a `fotos-publicas`. Las previews se sirven por enlace firmado, así que no hace falta lectura anónima.
+- Desplegar la función y comprobar que una llamada sin permisos responde "No autorizado".
+- Procesar una imagen real de prueba y revisar visualmente que la marca de agua aparece y que el tamaño se redujo.
+- Confirmar que el enlace devuelto abre la vista previa.
 
 ## Detalles técnicos
 
-- El procesamiento de imagen se queda en la Edge Function existente (Deno + ImageScript); el runtime del servidor de la app no soporta librerías de imagen nativas.
-- La galería ya lee `fotografias_publicas`, que expone `foto_publica_url`, así que no hay cambios en la vista de compra.
-- Limitación a considerar: los enlaces firmados de 10 años dejan de servir si se rotan las claves del proyecto; si eso pasa, se regeneran con un script.
+- Se mantiene Deno + ImageScript dentro de la Edge Function (el runtime del servidor de la app no soporta librerías de imagen nativas).
+- Los buckets son privados en este espacio de trabajo, por eso la vista previa se sirve mediante enlace firmado de larga duración en lugar de URL pública. Si algún día se rotan las claves del proyecto, esos enlaces habría que regenerarlos.
