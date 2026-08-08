@@ -1,153 +1,240 @@
-// Edge Function: generar-preview
+// Edge Function: webhook-pago (ePayco)
+// Deploy: supabase functions deploy webhook-pago --no-verify-jwt
 //
-// Flujo:
-//   1. El panel de admin sube SOLO el archivo original (alta resolución) al bucket privado.
-//   2. Llama a esta función pasando el `path` de ese archivo.
-//   3. Esta función descarga el original, lo reduce y le aplica marca de agua,
-//      sube el resultado al bucket público y devuelve un enlace firmado de 10 años.
-//   4. El panel guarda la fila en `fotografias` con foto_privada_path + foto_publica_url.
+// IMPORTANTE — modelo multi-tenant:
+// Cada evento tiene su PROPIA cuenta de ePayco (de su organizador real).
+// El dinero llega directo a esa cuenta, nunca pasa por una cuenta central.
+// Por eso este webhook, antes de verificar la firma, primero identifica
+// a qué evento pertenece la transacción (vía la orden), y usa LAS
+// CREDENCIALES DE ESE EVENTO para verificar la firma — no un secreto global.
 //
-// Solo administradores autenticados (is_admin()) pueden invocarla.
+// ePayco envía la confirmación como POST con datos application/x-www-form-urlencoded
+// (no JSON como otras pasarelas). Ver: https://docs.epayco.com/docs/url-de-confirmacion
+//
+// Al crear la transacción/checkout en el frontend, es OBLIGATORIO enviar
+// nuestra referencia interna (el id de la orden) en el campo x_extra1,
+// para poder identificar la orden aquí.
+//
+// Variables de entorno necesarias:
+//   SUPABASE_URL
+//   SUPABASE_SERVICE_ROLE_KEY
+//   RESEND_API_KEY
+//   BUCKET_PRIVADO   (default: "fotos-originales")
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { Image } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
+const bucketPrivado = Deno.env.get("BUCKET_PRIVADO") ?? "fotos-originales";
 
-// Buckets reales del proyecto (ambos privados).
-const BUCKET_PRIVADO = "fotos-privadas";
-const BUCKET_PUBLICO = "fotos-publicas";
-
-const admin = createClient(supabaseUrl, serviceRoleKey);
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "content-type": "application/json" },
-  });
-}
-
-// ImageScript 1.2.x recibe la fuente como bytes TTF crudos.
-const FONT_URL =
-  "https://raw.githubusercontent.com/matmen/ImageScript/master/tests/fonts/opensans%20bold.ttf";
-
-let fontCache: Uint8Array | null = null;
-async function getFont(): Promise<Uint8Array> {
-  if (!fontCache) {
-    const res = await fetch(FONT_URL);
-    if (!res.ok) throw new Error("No se pudo cargar la fuente de la marca de agua");
-    fontCache = new Uint8Array(await res.arrayBuffer());
-  }
-  return fontCache;
-}
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
   if (req.method !== "POST") {
-    return json({ error: "Method not allowed" }, 405);
+    return new Response("Method not allowed", { status: 405 });
   }
 
   try {
-    // --- Autorización: solo administradores ---
-    const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return json({ error: "No autorizado" }, 401);
+    // ePayco envía form-urlencoded, no JSON
+    const rawBody = await req.text();
+    const params = new URLSearchParams(rawBody);
+
+    const xRefPayco = params.get("x_ref_payco") ?? "";
+    const xTransactionId = params.get("x_transaction_id") ?? "";
+    const xAmount = params.get("x_amount") ?? "";
+    const xCurrencyCode = params.get("x_currency_code") ?? "";
+    const xSignature = params.get("x_signature") ?? "";
+    const xTransactionState = params.get("x_transaction_state") ?? "";
+    // Nuestra referencia interna (id de la orden), enviada como x_extra1 al crear la transacción
+    const referenciaOrden = params.get("x_extra1") ?? "";
+
+    if (!referenciaOrden) {
+      console.error("Webhook de ePayco sin x_extra1 (referencia de orden)");
+      return new Response("Falta referencia de orden", { status: 400 });
     }
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    // ---------------------------------------------------
+    // 1. Encontrar la orden y, con ella, el evento al que pertenece
+    // ---------------------------------------------------
+    const { data: orden, error: errorOrden } = await supabase
+      .from("ordenes")
+      .select("*")
+      .eq("referencia_pago", referenciaOrden)
+      .single();
 
-    const { data: userData } = await userClient.auth.getUser();
-    if (!userData?.user) {
-      return json({ error: "No autorizado" }, 401);
+    if (errorOrden || !orden) {
+      console.error("Orden no encontrada para referencia:", referenciaOrden, errorOrden);
+      return new Response("Orden no encontrada", { status: 404 });
     }
 
-    const { data: esAdmin, error: adminError } = await userClient.rpc("is_admin");
-    if (adminError || esAdmin !== true) {
-      return json({ error: "Requiere permisos de administrador" }, 403);
+    if (!orden.evento_id) {
+      console.error("La orden no tiene evento_id asociado:", orden.id);
+      return new Response("Orden sin evento asociado", { status: 400 });
     }
 
-    // --- Entrada ---
-    const { path } = await req.json();
-    if (!path || typeof path !== "string" || path.includes("..") || path.startsWith("/")) {
-      return json({ error: "Falta o es inválido el parámetro 'path'" }, 400);
+    // ---------------------------------------------------
+    // 2. Traer las credenciales de ESE evento (multi-tenant)
+    // ---------------------------------------------------
+    const { data: credenciales, error: errorCred } = await supabase
+      .from("credenciales_pago")
+      .select("llave_privada, datos_adicionales")
+      .eq("evento_id", orden.evento_id)
+      .single();
+
+    if (errorCred || !credenciales) {
+      console.error("El evento no tiene credenciales de pago configuradas:", orden.evento_id);
+      return new Response("Evento sin credenciales de pago", { status: 400 });
     }
 
-    // 1. Descargar el original desde el bucket privado
-    const { data: original, error: downloadError } = await admin.storage
-      .from(BUCKET_PRIVADO)
-      .download(path);
+    const pKey = credenciales.llave_privada;
+    const custId = (credenciales.datos_adicionales as Record<string, unknown>)?.customer_id as
+      | string
+      | undefined;
 
-    if (downloadError || !original) {
-      console.error("Error descargando original:", downloadError);
-      return json({ error: "No se encontró el archivo original" }, 404);
+    if (!pKey || !custId) {
+      console.error("Faltan p_key o customer_id en las credenciales del evento:", orden.evento_id);
+      return new Response("Credenciales incompletas", { status: 400 });
     }
 
-    const bytes = new Uint8Array(await original.arrayBuffer());
-    const image = await Image.decode(bytes);
+    // ---------------------------------------------------
+    // 3. Verificar la firma con las credenciales de ESE evento
+    // Fórmula oficial de ePayco:
+    // sha256(p_cust_id_cliente^p_key^x_ref_payco^x_transaction_id^x_amount^x_currency_code)
+    // ---------------------------------------------------
+    const cadena = `${custId}^${pKey}^${xRefPayco}^${xTransactionId}^${xAmount}^${xCurrencyCode}`;
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(cadena));
+    const hashHex = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
 
-    // 2. Reducir a máximo 1200 px de ancho
-    const ANCHO_MAXIMO = 1200;
-    if (image.width > ANCHO_MAXIMO) {
-      image.resize(ANCHO_MAXIMO, Image.RESIZE_AUTO);
+    if (hashHex !== xSignature) {
+      console.error("Firma de ePayco inválida para orden:", orden.id);
+      return new Response("Firma inválida", { status: 401 });
     }
 
-    // 3. Marca de agua diagonal repetida
-    const fuente = await getFont();
-    const texto = await Image.renderText(fuente, 26, "Preview · No Oficial", 0xffffff90);
+    // ---------------------------------------------------
+    // 4. Mapear el estado y actualizar la orden
+    // ---------------------------------------------------
+    const estadoInterno = mapearEstado(xTransactionState);
 
-    const paso = 240;
-    const capaMarca = new Image(image.width, image.height);
-    for (let y = -image.height; y < image.height * 2; y += paso) {
-      for (let x = -image.width; x < image.width * 2; x += paso) {
-        capaMarca.composite(texto, x, y);
-      }
-    }
-    capaMarca.rotate(-25);
-    image.composite(capaMarca, 0, 0);
+    const { data: ordenActualizada, error: errorUpdate } = await supabase
+      .from("ordenes")
+      .update({ estado: estadoInterno })
+      .eq("id", orden.id)
+      .select()
+      .single();
 
-    // 4. Comprimir como JPEG
-    const salida = await image.encodeJPEG(75);
-
-    // 5. Subir la vista previa al bucket público
-    const pathPublico = path.replace(/\.[^/.]+$/, "") + "-preview.jpg";
-    const { error: uploadError } = await admin.storage
-      .from(BUCKET_PUBLICO)
-      .upload(pathPublico, salida, { contentType: "image/jpeg", upsert: true });
-
-    if (uploadError) {
-      console.error("Error subiendo preview:", uploadError);
-      return json({ error: "Error subiendo el preview" }, 500);
+    if (errorUpdate || !ordenActualizada) {
+      console.error("Error actualizando la orden:", errorUpdate);
+      return new Response("Error actualizando orden", { status: 500 });
     }
 
-    // Los buckets no pueden ser públicos en este espacio de trabajo:
-    // se genera un enlace firmado de 10 años.
-    const DIEZ_ANIOS_EN_SEGUNDOS = 60 * 60 * 24 * 365 * 10;
-    const { data: signedData, error: signError } = await admin.storage
-      .from(BUCKET_PUBLICO)
-      .createSignedUrl(pathPublico, DIEZ_ANIOS_EN_SEGUNDOS);
-
-    if (signError || !signedData) {
-      console.error("Error firmando URL de preview:", signError);
-      return json({ error: "Error generando enlace de preview" }, 500);
+    // ---------------------------------------------------
+    // 5. Si el pago fue aprobado, entregar los archivos (idempotente)
+    // ---------------------------------------------------
+    if (estadoInterno === "aprobado" && !ordenActualizada.archivos_enviados) {
+      await entregarArchivos(ordenActualizada);
     }
 
-    return json({ foto_publica_url: signedData.signedUrl, preview_path: pathPublico });
+    return new Response("OK", { status: 200 });
   } catch (err) {
-    console.error("Error procesando preview:", err);
-    return json({ error: "Error interno" }, 500);
+    console.error("Error procesando webhook de ePayco:", err);
+    return new Response("Error interno", { status: 500 });
   }
 });
+
+function mapearEstado(estadoEpayco: string): "aprobado" | "rechazado" | "reembolsado" | "pendiente" {
+  switch (estadoEpayco) {
+    case "Aceptada":
+      return "aprobado";
+    case "Rechazada":
+    case "Fallida":
+      return "rechazado";
+    case "Pendiente":
+      return "pendiente";
+    default:
+      return "pendiente";
+  }
+}
+
+async function entregarArchivos(orden: any) {
+  const items = orden.items as { fotografia_id: string }[];
+  const ids = items.map((i) => i.fotografia_id);
+
+  const { data: fotos, error } = await supabase
+    .from("fotografias")
+    .select("id, foto_privada_path, video_privada_path")
+    .in("id", ids);
+
+  if (error || !fotos) {
+    console.error("Error obteniendo fotografías para entrega:", error);
+    return;
+  }
+
+  const expiracionSegundos = 60 * 60 * 48; // 48 horas
+  const enlaces: string[] = [];
+
+  for (const foto of fotos) {
+    const { data: signedFoto, error: errFoto } = await supabase.storage
+      .from(bucketPrivado)
+      .createSignedUrl(foto.foto_privada_path, expiracionSegundos);
+
+    if (errFoto) {
+      console.error("Error generando signed URL de foto:", errFoto);
+    } else if (signedFoto) {
+      enlaces.push(signedFoto.signedUrl);
+    }
+
+    if (foto.video_privada_path) {
+      const { data: signedVideo, error: errVideo } = await supabase.storage
+        .from(bucketPrivado)
+        .createSignedUrl(foto.video_privada_path, expiracionSegundos);
+
+      if (errVideo) {
+        console.error("Error generando signed URL de video:", errVideo);
+      } else if (signedVideo) {
+        enlaces.push(signedVideo.signedUrl);
+      }
+    }
+  }
+
+  await enviarCorreoDescarga(orden.email_comprador, enlaces);
+
+  await supabase
+    .from("ordenes")
+    .update({ archivos_enviados: true, fecha_envio: new Date().toISOString() })
+    .eq("id", orden.id);
+}
+
+async function enviarCorreoDescarga(destinatario: string, enlaces: string[]) {
+  const items = enlaces
+    .map((url) => `<li><a href="${url}">Descargar archivo</a></li>`)
+    .join("");
+
+  const html = `
+    <h2>¡Gracias por tu compra!</h2>
+    <p>Tus archivos están listos. Estos enlaces expiran en 48 horas:</p>
+    <ul>${items}</ul>
+  `;
+
+  const resp = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Cincuenta Milímetros <onboarding@resend.dev>",
+      to: [destinatario],
+      subject: "Tus fotos ya están listas para descargar",
+      html,
+    }),
+  });
+
+  if (!resp.ok) {
+    console.error("Error enviando correo:", await resp.text());
+  }
+}
