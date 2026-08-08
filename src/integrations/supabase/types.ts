@@ -32,6 +32,44 @@ export type Database = {
         }
         Relationships: []
       }
+      credenciales_pago: {
+        Row: {
+          created_at: string
+          datos_adicionales: Json
+          evento_id: string
+          llave_privada: string
+          llave_publica: string
+          proveedor: string
+          secreto_eventos: string
+        }
+        Insert: {
+          created_at?: string
+          datos_adicionales?: Json
+          evento_id: string
+          llave_privada: string
+          llave_publica: string
+          proveedor?: string
+          secreto_eventos: string
+        }
+        Update: {
+          created_at?: string
+          datos_adicionales?: Json
+          evento_id?: string
+          llave_privada?: string
+          llave_publica?: string
+          proveedor?: string
+          secreto_eventos?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credenciales_pago_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: true
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventos: {
         Row: {
           created_at: string
@@ -133,6 +171,7 @@ export type Database = {
           created_at: string
           email_comprador: string
           estado: Database["public"]["Enums"]["estado_pago"]
+          evento_id: string | null
           fecha_envio: string | null
           id: string
           items: Json
@@ -147,6 +186,7 @@ export type Database = {
           created_at?: string
           email_comprador: string
           estado?: Database["public"]["Enums"]["estado_pago"]
+          evento_id?: string | null
           fecha_envio?: string | null
           id?: string
           items?: Json
@@ -161,6 +201,7 @@ export type Database = {
           created_at?: string
           email_comprador?: string
           estado?: Database["public"]["Enums"]["estado_pago"]
+          evento_id?: string | null
           fecha_envio?: string | null
           id?: string
           items?: Json
@@ -170,10 +211,44 @@ export type Database = {
           referencia_pago?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
+      credenciales_pago_publicas: {
+        Row: {
+          evento_id: string | null
+          llave_publica: string | null
+          proveedor: string | null
+        }
+        Insert: {
+          evento_id?: string | null
+          llave_publica?: string | null
+          proveedor?: string | null
+        }
+        Update: {
+          evento_id?: string | null
+          llave_publica?: string | null
+          proveedor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credenciales_pago_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: true
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fotografias_publicas: {
         Row: {
           atleta: string | null
