@@ -51,12 +51,13 @@ serve(async (req) => {
       return new Response("Falta el parámetro 'path'", { status: 400 });
     }
 
-    // DIAGNÓSTICO TEMPORAL: lista los buckets que esta función puede ver,
-    // para confirmar si el problema es de nombre, de permisos, o de proyecto.
+    // DIAGNÓSTICO TEMPORAL: lista los buckets que esta función puede ver.
+    // Se usa console.error a propósito (no son errores reales) porque el
+    // visor de logs solo parece capturar ese nivel de forma confiable.
     const { data: bucketsVisibles, error: errorBuckets } = await supabase.storage.listBuckets();
-    console.log("Buckets visibles:", JSON.stringify(bucketsVisibles));
-    console.log("Buscando bucket privado con nombre:", bucketPrivado);
-    if (errorBuckets) console.error("Error listando buckets:", errorBuckets);
+    console.error("[DIAGNÓSTICO] Buckets visibles:", JSON.stringify(bucketsVisibles));
+    console.error("[DIAGNÓSTICO] Buscando bucket privado con nombre:", bucketPrivado);
+    if (errorBuckets) console.error("[DIAGNÓSTICO] Error listando buckets:", JSON.stringify(errorBuckets));
 
     // 1. Descargar el archivo original desde el bucket privado
     const { data: original, error: downloadError } = await supabase.storage
